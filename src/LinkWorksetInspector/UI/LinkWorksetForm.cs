@@ -91,11 +91,12 @@ namespace LinkWorksetInspector.UI
             diagColumn.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
             _grid.CellDoubleClick += OnRowDoubleClick;
 
-            Controls.Add(_summary);
-            Controls.Add(_onlyProblems);
-            Controls.Add(buttons);
+            // WinForms procesa el docking en orden z inverso (el último añadido se
+            // ancla primero): el resumen debe añadirse el último para quedar arriba.
             Controls.Add(_grid);
-            _grid.BringToFront();
+            Controls.Add(buttons);
+            Controls.Add(_onlyProblems);
+            Controls.Add(_summary);
 
             BuildSummary(activeViewName);
             FillGrid();
@@ -125,11 +126,11 @@ namespace LinkWorksetInspector.UI
 
             if (!_report.IsWorkshared)
             {
-                sb.AppendLine("Este modelo no tiene worksets (no es de trabajo compartido); solo se muestra el estado de carga.");
+                sb.AppendLine("Este modelo no tiene worksets/subproyectos (no es de trabajo compartido); solo se muestra el estado de carga.");
             }
             else if (_report.ClosedWorksetsWithLinks.Count > 0)
             {
-                sb.AppendLine("Worksets CERRADOS con vínculos afectados — abre solo estos: " +
+                sb.AppendLine("Worksets CERRADOS con vínculos afectados — abre solo estos en Colaborar ▸ Subproyectos: " +
                               string.Join(", ", _report.ClosedWorksetsWithLinks));
             }
             else

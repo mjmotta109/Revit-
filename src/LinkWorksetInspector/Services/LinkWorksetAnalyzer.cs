@@ -163,7 +163,7 @@ namespace LinkWorksetInspector.Services
                 {
                     visible = "No";
                 }
-                else if (activeView != null)
+                else if (IsGraphicalView(activeView))
                 {
                     visible = CheckViewVisibility(doc, activeView, instance, instWs, hiddenReasons);
                 }
@@ -185,26 +185,28 @@ namespace LinkWorksetInspector.Services
                     case LinkedFileStatus.NotFound:
                         problem = true;
                         diag.Append("Revit no encuentra el archivo (ruta rota o sin acceso a la red). " +
-                                    "Corrige la ruta en Administrar vínculos.");
+                                    "Corrige la ruta en Gestionar vínculos (pestaña Insertar o Gestionar).");
                         break;
 
                     case LinkedFileStatus.InClosedWorkset:
                         problem = true;
-                        diag.Append("El vínculo NO se cargó porque su workset «" + typeWs.Name + "» está cerrado. " +
-                                    "Abre SOLO ese workset (Colaborar ▸ Worksets ▸ seleccionarlo ▸ Abrir) y el vínculo " +
-                                    "se cargará sin necesidad de abrir todos los worksets.");
+                        diag.Append("El vínculo NO se cargó porque su workset «" + typeWs.Name + "» está cerrado " +
+                                    "(en Gestionar vínculos aparece como «En subproyecto cerrado»). " +
+                                    "Abre SOLO ese workset —Colaborar ▸ Gestionar colaboración ▸ Subproyectos ▸ " +
+                                    "seleccionarlo ▸ Abrir— y el vínculo se cargará sin necesidad de abrir todos.");
                         if (typeWs.Valid && typeWs.IsOpen == false) closedWorksets.Add(typeWs.Name);
                         break;
 
                     case LinkedFileStatus.Unloaded:
                         problem = true;
-                        diag.Append("El vínculo está descargado. Recárgalo desde Administrar vínculos.");
+                        diag.Append("El vínculo está descargado. Recárgalo desde Gestionar vínculos " +
+                                    "(botón Volver a cargar).");
                         break;
 
                     case LinkedFileStatus.LocallyUnloaded:
                         problem = true;
                         diag.Append("El vínculo está descargado solo en tu copia local. " +
-                                    "Recárgalo desde Administrar vínculos (Recargar).");
+                                    "Recárgalo desde Gestionar vínculos (botón Volver a cargar).");
                         break;
                 }
 
@@ -213,7 +215,7 @@ namespace LinkWorksetInspector.Services
                 {
                     problem = true;
                     AppendSentence(diag, "Además, el workset del vínculo «" + typeWs.Name +
-                        "» está CERRADO: ábrelo en Colaborar ▸ Worksets.");
+                        "» está CERRADO: ábrelo en Colaborar ▸ Gestionar colaboración ▸ Subproyectos.");
                     closedWorksets.Add(typeWs.Name);
                 }
 
@@ -221,9 +223,9 @@ namespace LinkWorksetInspector.Services
                 {
                     problem = true;
                     AppendSentence(diag, "No se encontró ninguna instancia colocada de este vínculo: " +
-                        "el archivo sigue registrado en Administrar vínculos, pero su instancia pudo " +
+                        "el archivo sigue registrado en Gestionar vínculos, pero su instancia pudo " +
                         "haberse borrado del modelo. Si el vínculo está cargado, colócalo de nuevo " +
-                        "(Administrar vínculos no lo recoloca solo).");
+                        "(Gestionar vínculos no lo recoloca solo).");
                 }
                 else
                 {
@@ -231,8 +233,8 @@ namespace LinkWorksetInspector.Services
                     {
                         problem = true;
                         AppendSentence(diag, "La instancia está en el workset «" + instWs.Name +
-                            "», que está CERRADO: por eso no la ves. Ábrelo en Colaborar ▸ Worksets " +
-                            "(solo ese, no hace falta abrir todos).");
+                            "», que está CERRADO: por eso no la ves. Ábrelo en Colaborar ▸ Gestionar " +
+                            "colaboración ▸ Subproyectos (solo ese, no hace falta abrir todos).");
                         closedWorksets.Add(instWs.Name);
                     }
 
@@ -245,9 +247,14 @@ namespace LinkWorksetInspector.Services
 
                 if (!problem)
                 {
-                    diag.Append("Sin bloqueos detectados: cargado, worksets abiertos y visible en la vista activa. " +
-                                "Si no lo ves en otra vista, revisa allí: V/G ▸ pestañas Vínculos de Revit y Worksets, " +
-                                "filtros, plantilla de vista, rango de vista, fases, opciones de diseño y región de recorte.");
+                    string checkedPart = visible == "Sí"
+                        ? "Sin bloqueos detectados: cargado, worksets abiertos y visible en la vista activa. "
+                        : "Sin bloqueos detectados: cargado y worksets abiertos. No se pudo comprobar la " +
+                          "visibilidad porque no hay una vista gráfica activa. ";
+                    diag.Append(checkedPart +
+                                "Si no lo ves en alguna vista, revisa allí: V/G ▸ pestañas Vínculos de Revit y " +
+                                "Subproyectos, filtros, plantilla de vista, rango de vista, fases, opciones de " +
+                                "diseño y región de recorte.");
                 }
             }
 
@@ -279,7 +286,7 @@ namespace LinkWorksetInspector.Services
             }
             catch { }
 
-            // 1) Visibilidad del workset en esta vista (V/G ▸ pestaña Worksets).
+            // 1) Visibilidad del workset en esta vista (V/G ▸ pestaña Subproyectos).
             try
             {
                 if (doc.IsWorkshared && instWs.Valid)
@@ -289,7 +296,7 @@ namespace LinkWorksetInspector.Services
                     {
                         hidden = true;
                         reasons.Add("el workset «" + instWs.Name +
-                            "» está oculto en esta vista (V/G ▸ pestaña Worksets ▸ ponlo en Mostrar).");
+                            "» está oculto en esta vista (V/G ▸ pestaña Subproyectos ▸ ponlo en Mostrar).");
                     }
                     else if (wv == WorksetVisibility.UseGlobalSetting)
                     {
@@ -298,7 +305,7 @@ namespace LinkWorksetInspector.Services
                         {
                             hidden = true;
                             reasons.Add("el workset «" + instWs.Name +
-                                "» tiene desactivada la casilla «Visible en todas las vistas» (diálogo Worksets).");
+                                "» tiene desactivada la casilla «Visible en todas las vistas» (diálogo Subproyectos).");
                         }
                     }
                 }
@@ -323,8 +330,8 @@ namespace LinkWorksetInspector.Services
                 if (instance.IsHidden(view))
                 {
                     hidden = true;
-                    reasons.Add("la instancia está oculta manualmente en esta vista " +
-                        "(usa la bombilla «Revelar elementos ocultos» para restaurarla).");
+                    reasons.Add("la instancia está oculta manualmente en esta vista: usa la bombilla " +
+                        "«Mostrar elementos ocultos» (atajo RH), selecciónala y elige Mostrar elemento.");
                 }
             }
             catch { }
@@ -343,6 +350,34 @@ namespace LinkWorksetInspector.Services
             catch { }
 
             return hidden ? "No" : "Sí";
+        }
+
+        /// <summary>
+        /// Solo tiene sentido comprobar visibilidad en vistas gráficas de modelo:
+        /// en tablas, planos, informes o leyendas los vínculos no se dibujan.
+        /// </summary>
+        private static bool IsGraphicalView(View view)
+        {
+            if (view == null) return false;
+            switch (view.ViewType)
+            {
+                case ViewType.Undefined:
+                case ViewType.Schedule:
+                case ViewType.ColumnSchedule:
+                case ViewType.PanelSchedule:
+                case ViewType.CostReport:
+                case ViewType.LoadsReport:
+                case ViewType.PresureLossReport:
+                case ViewType.DrawingSheet:
+                case ViewType.Legend:
+                case ViewType.Rendering:
+                case ViewType.ProjectBrowser:
+                case ViewType.SystemBrowser:
+                case ViewType.Internal:
+                    return false;
+                default:
+                    return true;
+            }
         }
 
         private class WorksetInfo

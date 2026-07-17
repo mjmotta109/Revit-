@@ -3,16 +3,21 @@
 Add-in para **Autodesk Revit** que responde una pregunta muy concreta:
 
 > *"Tengo un vínculo que no aparece en el modelo, pero sí está registrado en
-> Administrar vínculos. ¿En qué workset está, para abrir **solo ese** workset
+> Gestionar vínculos. ¿En qué workset está, para abrir **solo ese** workset
 > en lugar de abrirlos todos y sobrecargar el proyecto?"*
+
+> Nota de terminología: en el Revit en español los *worksets* se llaman
+> **Subproyectos** (Colaborar ▸ Gestionar colaboración ▸ Subproyectos) y
+> *Manage Links* es **Gestionar vínculos**. Aquí usamos "workset" por ser la
+> jerga habitual, y las rutas de menú con sus nombres oficiales en español.
 
 ## El problema que resuelve
 
 En modelos de trabajo compartido (worksharing), cuando un vínculo RVT o CAD está
 en un **workset cerrado**, Revit ni siquiera lo carga: no se ve en ninguna vista,
-aunque sigue apareciendo registrado en *Administrar vínculos*. La "solución"
-habitual —abrir todos los worksets— penaliza mucho el rendimiento en proyectos
-grandes.
+aunque sigue apareciendo registrado en *Gestionar vínculos* (con el estado
+"En subproyecto cerrado"). La "solución" habitual —abrir todos los worksets—
+penaliza mucho el rendimiento en proyectos grandes.
 
 Esta herramienta recorre **todos los tipos de vínculo del documento, estén
 cargados o no** (los elementos `RevitLinkType` / `CADLinkType` siempre están en
@@ -46,10 +51,10 @@ Además:
 La herramienta es **solo lectura**: no abre transacciones ni modifica el modelo.
 
 > Nota: la API de Revit no permite abrir un workset cerrado en un documento ya
-> abierto, así que el último paso es manual (y rápido): **Colaborar ▸ Worksets ▸
-> seleccionar el workset indicado ▸ Abrir**. Al abrir el modelo también puedes
-> usar el desplegable del botón *Abrir ▸ Worksets ▸ Especificar…* para abrir
-> solo los worksets que necesitas.
+> abierto, así que el último paso es manual (y rápido): **Colaborar ▸ Gestionar
+> colaboración ▸ Subproyectos ▸ seleccionar el workset indicado ▸ Abrir**. Al
+> abrir el modelo también puedes usar el desplegable de subproyectos del botón
+> *Abrir ▸ Especificar…* para abrir solo los worksets que necesitas.
 
 ## Requisitos
 
@@ -92,20 +97,21 @@ LinkWorksetInspector\LinkWorksetInspector.dll   (desde src/.../bin/Release/)
 1. Abre el modelo (con tu selección habitual de worksets, no hace falta abrirlos todos).
 2. **MJ Tools ▸ Vínculos ▸ ¿Dónde está el vínculo?**
 3. Mira el resumen superior: ahí están los worksets cerrados que bloquean vínculos.
-4. **Colaborar ▸ Worksets**, abre solo ese workset, y el vínculo aparecerá
-   (si además estaba descargado, recárgalo en *Administrar vínculos*).
+4. **Colaborar ▸ Gestionar colaboración ▸ Subproyectos**, abre solo ese workset,
+   y el vínculo aparecerá (si además estaba descargado, recárgalo en
+   *Gestionar vínculos* con el botón *Volver a cargar*).
 
 ## Diagnósticos que detecta
 
 | Situación | Diagnóstico |
 |---|---|
-| Workset del tipo de vínculo cerrado (`En workset cerrado`) | El vínculo ni se cargó; indica el workset exacto a abrir |
+| Workset del tipo de vínculo cerrado (`En workset cerrado` / "En subproyecto cerrado") | El vínculo ni se cargó; indica el workset exacto a abrir |
 | Workset de la instancia cerrado | El archivo está cargado pero la instancia no se ve; indica el workset a abrir |
-| Vínculo descargado / descargado solo local | Recargar desde Administrar vínculos |
-| Archivo no encontrado | Ruta rota; corregir en Administrar vínculos |
-| Workset oculto en la vista activa (V/G ▸ Worksets) o sin "Visible en todas las vistas" | Indica dónde reactivarlo |
+| Vínculo descargado / descargado solo local | Recargar desde Gestionar vínculos (Volver a cargar) |
+| Archivo no encontrado | Ruta rota; corregir en Gestionar vínculos |
+| Workset oculto en la vista activa (V/G ▸ Subproyectos) o sin "Visible en todas las vistas" | Indica dónde reactivarlo |
 | Categoría oculta, elemento oculto manualmente, opción de diseño no principal, CAD de "solo vista actual" | Indica el motivo y el remedio |
-| Tipo registrado sin ninguna instancia colocada | Avisa de que la instancia pudo borrarse aunque el archivo siga en Administrar vínculos |
+| Tipo registrado sin ninguna instancia colocada | Avisa de que la instancia pudo borrarse aunque el archivo siga en Gestionar vínculos |
 | Vínculo anidado | Se controla desde el vínculo padre |
 
 ## Estructura del código

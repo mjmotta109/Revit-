@@ -32,10 +32,10 @@ namespace LinkWorksetInspector
                     typeof(App).Assembly.Location,
                     "LinkWorksetInspector.Commands.InspectLinkWorksetsCommand")
                 {
-                    ToolTip = "Muestra en qué workset está cada vínculo (RVT y CAD), aunque no esté cargado.",
+                    ToolTip = "Muestra en qué workset (subproyecto) está cada vínculo (RVT y CAD), aunque no esté cargado.",
                     LongDescription =
-                        "Lista todos los vínculos del modelo con su workset, el estado de ese workset " +
-                        "(abierto o cerrado), el estado de carga del vínculo y un diagnóstico de por qué " +
+                        "Lista todos los vínculos del modelo con su workset (subproyecto), el estado de ese " +
+                        "workset (abierto o cerrado), el estado de carga del vínculo y un diagnóstico de por qué " +
                         "podría no estar visible. Así puedes abrir SOLO el workset necesario en lugar de " +
                         "abrirlos todos y sobrecargar el proyecto.",
                     AvailabilityClassName = "LinkWorksetInspector.CommandAvailability",
