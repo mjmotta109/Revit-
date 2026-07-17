@@ -1,0 +1,14 @@
+# Compilación .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Paquetes NuGet
+packages/
+*.nupkg
+
+# Archivos temporales de Revit
+*.0001.rvt
+*_backup/

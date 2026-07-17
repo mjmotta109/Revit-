@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Link Workset Inspector</Name>
+    <Assembly>LinkWorksetInspector\LinkWorksetInspector.dll</Assembly>
+    <AddInId>994d53d7-fcf8-4e3d-8cdd-3d6342993a48</AddInId>
+    <FullClassName>LinkWorksetInspector.App</FullClassName>
+    <VendorId>MJMT</VendorId>
+    <VendorDescription>MJ Motta — Link Workset Inspector</VendorDescription>
+  </AddIn>
+</RevitAddIns>
