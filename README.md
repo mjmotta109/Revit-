@@ -1,5 +1,7 @@
 # Link Workset Inspector — ¿En qué workset está mi vínculo?
 
+[![Compilar](https://github.com/mjmotta109/Revit-/actions/workflows/build.yml/badge.svg)](https://github.com/mjmotta109/Revit-/actions/workflows/build.yml)
+
 Add-in para **Autodesk Revit** que responde una pregunta muy concreta:
 
 > *"Tengo un vínculo que no aparece en el modelo, pero sí está registrado en
@@ -59,6 +61,27 @@ La herramienta es **solo lectura**: no abre transacciones ni modifica el modelo.
   escritorio de .NET**, o el SDK de .NET si prefieres línea de comandos.
   Las referencias a la API de Revit se descargan solas desde NuGet
   (paquetes `Nice3point.Revit.Api.*`); no hace falta copiar ninguna DLL.
+
+## Instalar sin compilar (recomendado)
+
+Cada cambio en el repositorio se compila automáticamente para Revit 2021–2026
+(pestaña **Actions** de GitHub). Para instalar sin abrir Visual Studio:
+
+1. Entra en [Actions ▸ Compilar](https://github.com/mjmotta109/Revit-/actions/workflows/build.yml)
+   y abre la ejecución más reciente con ✅.
+2. En la sección **Artifacts** descarga `LinkWorksetInspector-Revit<tu versión>`
+   (por ejemplo `LinkWorksetInspector-Revit2025`).
+3. Descomprime el zip dentro de `%AppData%\Autodesk\Revit\Addins\<versión>\`
+   (pega esa ruta en el Explorador de Windows). Debe quedar así:
+
+   ```
+   %AppData%\Autodesk\Revit\Addins\2025\LinkWorksetInspector.addin
+   %AppData%\Autodesk\Revit\Addins\2025\LinkWorksetInspector\LinkWorksetInspector.dll
+   ```
+
+4. Arranca Revit y acepta el aviso de add-in la primera vez.
+
+> Nota: GitHub pide iniciar sesión (una cuenta gratuita) para descargar artifacts.
 
 ## Compilar e instalar
 
