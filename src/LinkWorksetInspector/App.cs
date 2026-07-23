@@ -52,6 +52,33 @@ namespace LinkWorksetInspector
                     catch { /* sin icono el botón funciona igual */ }
                 }
 
+                var aiButtonData = new PushButtonData(
+                    "LinkWorksetInspector_AiAssistant",
+                    "Asistente\nIA",
+                    typeof(App).Assembly.Location,
+                    "LinkWorksetInspector.Commands.AiAssistantCommand")
+                {
+                    ToolTip = "Chatea con una IA que consulta el modelo abierto (Claude, API de Anthropic).",
+                    LongDescription =
+                        "Abre un chat donde puedes preguntar en lenguaje natural sobre el modelo: " +
+                        "cuántos elementos hay por nivel, qué vínculos están descargados y en qué " +
+                        "workset, qué advertencias tiene el proyecto, parámetros de un elemento, etc. " +
+                        "La IA consulta los datos reales mediante herramientas de solo lectura. " +
+                        "Requiere una API key de Anthropic.",
+                    AvailabilityClassName = "LinkWorksetInspector.CommandAvailability",
+                };
+
+                var aiButton = panel.AddItem(aiButtonData) as PushButton;
+                if (aiButton != null)
+                {
+                    try
+                    {
+                        aiButton.LargeImage = RibbonIconFactory.CreateSpark(32);
+                        aiButton.Image = RibbonIconFactory.CreateSpark(16);
+                    }
+                    catch { /* sin icono el botón funciona igual */ }
+                }
+
                 return Result.Succeeded;
             }
             catch (Exception)

@@ -43,5 +43,45 @@ namespace LinkWorksetInspector
             bitmap.Freeze();
             return bitmap;
         }
+
+        /// <summary>Icono del asistente IA: destello de cuatro puntas sobre fondo violeta.</summary>
+        public static ImageSource CreateSpark(int size)
+        {
+            double s = size;
+            var visual = new DrawingVisual();
+
+            using (DrawingContext dc = visual.RenderOpen())
+            {
+                var background = new LinearGradientBrush(
+                    Color.FromRgb(0x6A, 0x3D, 0xC8),
+                    Color.FromRgb(0x35, 0x1B, 0x6E),
+                    90.0);
+                dc.DrawRoundedRectangle(background, null, new Rect(0, 0, s, s), s * 0.18, s * 0.18);
+
+                dc.DrawGeometry(Brushes.White, null, SparkGeometry(s * 0.50, s * 0.52, s * 0.34));
+                dc.DrawGeometry(Brushes.White, null, SparkGeometry(s * 0.76, s * 0.24, s * 0.12));
+            }
+
+            var bitmap = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32);
+            bitmap.Render(visual);
+            bitmap.Freeze();
+            return bitmap;
+        }
+
+        private static Geometry SparkGeometry(double cx, double cy, double radius)
+        {
+            double waist = radius * 0.22;
+            var geometry = new StreamGeometry();
+            using (StreamGeometryContext ctx = geometry.Open())
+            {
+                ctx.BeginFigure(new Point(cx, cy - radius), true, true);
+                ctx.QuadraticBezierTo(new Point(cx + waist, cy - waist), new Point(cx + radius, cy), true, false);
+                ctx.QuadraticBezierTo(new Point(cx + waist, cy + waist), new Point(cx, cy + radius), true, false);
+                ctx.QuadraticBezierTo(new Point(cx - waist, cy + waist), new Point(cx - radius, cy), true, false);
+                ctx.QuadraticBezierTo(new Point(cx - waist, cy - waist), new Point(cx, cy - radius), true, false);
+            }
+            geometry.Freeze();
+            return geometry;
+        }
     }
 }

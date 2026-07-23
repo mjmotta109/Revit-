@@ -19,23 +19,30 @@
     <RootNamespace>LinkWorksetInspector</RootNamespace>
     <Version>1.0.0</Version>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Ensamblados de la API de Revit (solo para compilar; en ejecución los provee Revit) -->
-    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*" />
-    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*" />
+    <!-- Ensamblados de la API de Revit: solo para compilar (en ejecución los provee Revit),
+         por eso ExcludeAssets=runtime evita copiarlos a la salida -->
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*" ExcludeAssets="runtime" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*" ExcludeAssets="runtime" />
+
+    <!-- SDK oficial de Anthropic (asistente IA). Sus DLL sí deben copiarse junto al add-in. -->
+    <PackageReference Include="Anthropic" Version="*" />
   </ItemGroup>
 
-  <!-- Despliegue automático: al compilar en Windows copia la DLL y el .addin
-       a la carpeta de add-ins de Revit del usuario actual -->
+  <!-- Despliegue automático: al compilar en Windows copia el add-in con todas sus
+       dependencias (SDK de Anthropic incluido) y el .addin a la carpeta de add-ins -->
   <Target Name="DeployAddin" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
     <PropertyGroup>
       <RevitAddinsDir>$(AppData)\Autodesk\Revit\Addins\$(RevitVersion)\</RevitAddinsDir>
     </PropertyGroup>
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(RevitAddinsDir)LinkWorksetInspector\" />
+    <ItemGroup>
+      <AddinOutput Include="$(TargetDir)**\*.dll;$(TargetDir)**\*.pdb;$(TargetDir)**\*.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(AddinOutput)" DestinationFolder="$(RevitAddinsDir)LinkWorksetInspector\%(RecursiveDir)" />
     <Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\manifest\LinkWorksetInspector.addin" DestinationFolder="$(RevitAddinsDir)" />
     <Message Importance="high" Text="Add-in desplegado en: $(RevitAddinsDir)" />
   </Target>

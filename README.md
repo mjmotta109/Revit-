@@ -1,6 +1,13 @@
-# Link Workset Inspector — ¿En qué workset está mi vínculo?
+# Link Workset Inspector — ¿En qué workset está mi vínculo? + Asistente IA
 
-Add-in para **Autodesk Revit** que responde una pregunta muy concreta:
+Add-in para **Autodesk Revit** con dos herramientas en la pestaña **MJ Tools**:
+
+1. **¿Dónde está el vínculo?** — diagnóstico de vínculos y worksets (abajo).
+2. **Asistente IA** — un chat con Claude (API de Anthropic) que responde preguntas
+   sobre el modelo abierto consultando los datos reales
+   ([ver sección](#asistente-ia--chatea-con-tu-modelo)).
+
+La primera responde una pregunta muy concreta:
 
 > *"Tengo un vínculo que no aparece en el modelo, pero sí está registrado en
 > Gestionar vínculos. ¿En qué workset está, para abrir **solo ese** workset
@@ -114,15 +121,61 @@ LinkWorksetInspector\LinkWorksetInspector.dll   (desde src/.../bin/Release/)
 | Tipo registrado sin ninguna instancia colocada | Avisa de que la instancia pudo borrarse aunque el archivo siga en Gestionar vínculos |
 | Vínculo anidado | Se controla desde el vínculo padre |
 
+## Asistente IA — chatea con tu modelo
+
+El botón **MJ Tools ▸ Vínculos ▸ Asistente IA** abre un chat donde escribes en
+lenguaje natural y Claude responde consultando el modelo abierto mediante
+herramientas. Ejemplos:
+
+- *"¿Cuántas puertas hay por nivel?"*
+- *"¿Qué vínculos están descargados y en qué workset están?"*
+- *"¿Qué advertencias tiene el modelo y cuáles se repiten más?"*
+- *"Busca los muros cuyo tipo contenga 'hormigón' y selecciónalos"*
+- *"¿Qué worksets están cerrados?"*
+
+### Cómo funciona
+
+La IA no adivina: invoca herramientas del add-in que leen el modelo con la API
+de Revit y le devuelven datos reales — `contar_elementos`, `buscar_elementos`,
+`listar_niveles`, `listar_worksets`, `listar_categorias`, `estado_vinculos`
+(reutiliza el analizador de la herramienta principal), `listar_advertencias`,
+`parametros_elemento`, `info_proyecto` y `seleccionar_elementos`.
+
+Todas son de **solo lectura**: el asistente nunca modifica el modelo (lo único
+que puede cambiar es la selección en pantalla, si se lo pides).
+
+### Requisitos y configuración
+
+- Una **API key de Anthropic** (se crea en [platform.claude.com](https://platform.claude.com);
+  requiere cuenta con crédito de API — el uso tiene coste por tokens).
+- La primera vez que abras el asistente te pedirá la clave y la guardará en
+  `%AppData%\LinkWorksetInspector\ai-settings.json` (en texto plano). Si
+  prefieres no guardarla, define la variable de entorno `ANTHROPIC_API_KEY`.
+- Modelo por defecto: `claude-opus-4-8`. Puedes cambiarlo editando el campo
+  `Model` de ese mismo archivo de configuración.
+- La integración usa el **SDK oficial de Anthropic para C#** (paquete NuGet
+  `Anthropic`), que se restaura al compilar.
+
+> Privacidad: lo que escribas en el chat y los datos que devuelvan las
+> herramientas (nombres de elementos, worksets, advertencias…) se envían a la
+> API de Anthropic para generar la respuesta. No uses el asistente en modelos
+> cuya información no puedas compartir con ese servicio.
+
 ## Estructura del código
 
 ```
 manifest/LinkWorksetInspector.addin        Manifiesto del add-in
 src/LinkWorksetInspector/
-  App.cs                                   IExternalApplication: ribbon y botón
-  RibbonIconFactory.cs                     Icono del botón dibujado en memoria
-  Commands/InspectLinkWorksetsCommand.cs   IExternalCommand: orquesta análisis + ventana
-  Services/LinkWorksetAnalyzer.cs          Toda la lógica de análisis y diagnóstico
-  Models/LinkReportRow.cs                  Fila del informe
-  UI/LinkWorksetForm.cs                    Ventana WinForms con la tabla
+  App.cs                                   IExternalApplication: ribbon y botones
+  RibbonIconFactory.cs                     Iconos de los botones dibujados en memoria
+  Commands/InspectLinkWorksetsCommand.cs   Comando del diagnóstico de vínculos
+  Commands/AiAssistantCommand.cs           Comando del asistente IA
+  Services/LinkWorksetAnalyzer.cs          Lógica de análisis y diagnóstico de vínculos
+  Services/Ai/ClaudeChatService.cs         Bucle de chat + tool use (SDK de Anthropic)
+  Services/Ai/RevitModelTools.cs           Herramientas que la IA ejecuta sobre el modelo
+  Services/Ai/AiSettings.cs                API key y modelo (archivo o variable de entorno)
+  Models/LinkReportRow.cs                  Fila del informe de vínculos
+  UI/LinkWorksetForm.cs                    Ventana de la tabla de vínculos
+  UI/AiChatForm.cs                         Ventana de chat del asistente
+  UI/ApiKeyForm.cs                         Diálogo de configuración de la API key
 ```
