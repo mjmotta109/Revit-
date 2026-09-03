@@ -15,8 +15,8 @@
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <AssemblyName>LinkWorksetInspector</AssemblyName>
-    <RootNamespace>LinkWorksetInspector</RootNamespace>
+    <AssemblyName>QuickDimension</AssemblyName>
+    <RootNamespace>QuickDimension</RootNamespace>
     <Version>1.0.0</Version>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
@@ -42,8 +42,8 @@
     <PropertyGroup>
       <RevitAddinsDir>$(AppData)\Autodesk\Revit\Addins\$(RevitVersion)\</RevitAddinsDir>
     </PropertyGroup>
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(RevitAddinsDir)LinkWorksetInspector\" />
-    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\manifest\LinkWorksetInspector.addin" DestinationFolder="$(RevitAddinsDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(RevitAddinsDir)QuickDimension\" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\manifest\QuickDimension.addin" DestinationFolder="$(RevitAddinsDir)" />
     <Message Importance="high" Text="Add-in desplegado en: $(RevitAddinsDir)" />
   </Target>
 

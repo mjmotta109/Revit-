@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Quick Dimension</Name>
+    <Assembly>QuickDimension\QuickDimension.dll</Assembly>
+    <AddInId>e4fa9f8a-4aa1-4f03-b86e-d04236c1c86a</AddInId>
+    <FullClassName>QuickDimension.App</FullClassName>
+    <VendorId>MJMT</VendorId>
+    <VendorDescription>MJ Motta — Cota rápida</VendorDescription>
+  </AddIn>
+</RevitAddIns>

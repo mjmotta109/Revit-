@@ -10,7 +10,9 @@ on:
 jobs:
   build:
     name: Revit ${{ matrix.revit }}
-    runs-on: ubuntu-latest
+    # Windows es obligatorio: los add-ins usan WPF y WinForms, y esos SDK de
+    # escritorio no existen fuera de Windows (en Linux la compilación falla).
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
@@ -18,34 +20,33 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
 
       - name: Instalar .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
 
-      - name: Cache de paquetes NuGet
-        uses: actions/cache@v6
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ matrix.revit }}-${{ hashFiles('**/*.csproj') }}
-          restore-keys: ${{ runner.os }}-nuget-${{ matrix.revit }}-
+      - name: Compilar Link Workset Inspector
+        run: dotnet build -c Release -p:RevitVersion=${{ matrix.revit }} -p:SkipAddinDeploy=true src/LinkWorksetInspector/LinkWorksetInspector.csproj
 
-      - name: Compilar para Revit ${{ matrix.revit }}
-        run: dotnet build -c Release -p:RevitVersion=${{ matrix.revit }} src/LinkWorksetInspector/LinkWorksetInspector.csproj
+      - name: Compilar Cota rápida
+        run: dotnet build -c Release -p:RevitVersion=${{ matrix.revit }} -p:SkipAddinDeploy=true src/QuickDimension/QuickDimension.csproj
 
       # El zip resultante se descomprime tal cual dentro de
       # %AppData%\Autodesk\Revit\Addins\<versión>\
       - name: Preparar paquete de instalación
+        shell: bash
         run: |
-          mkdir -p staging/LinkWorksetInspector
+          mkdir -p staging/LinkWorksetInspector staging/QuickDimension
           cp manifest/LinkWorksetInspector.addin staging/
+          cp manifest/QuickDimension.addin staging/
           cp src/LinkWorksetInspector/bin/Release/LinkWorksetInspector.dll staging/LinkWorksetInspector/
+          cp src/QuickDimension/bin/Release/QuickDimension.dll staging/QuickDimension/
 
       - name: Publicar artefacto
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
-          name: LinkWorksetInspector-Revit${{ matrix.revit }}
+          name: MJTools-Revit${{ matrix.revit }}
           path: staging/
           if-no-files-found: error
