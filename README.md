@@ -1,11 +1,12 @@
-# Link Workset Inspector — ¿En qué workset está mi vínculo? + Asistente IA
+# MJ Tools para Revit — vínculos, asistente IA y alzados por habitación
 
-Add-in para **Autodesk Revit** con dos herramientas en la pestaña **MJ Tools**:
+Add-in para **Autodesk Revit** con tres herramientas en la pestaña **MJ Tools**:
 
-1. **¿Dónde está el vínculo?** — diagnóstico de vínculos y worksets (abajo).
-2. **Asistente IA** — un chat con Claude (API de Anthropic) que responde preguntas
-   sobre el modelo abierto consultando los datos reales
-   ([ver sección](#asistente-ia--chatea-con-tu-modelo)).
+| Panel | Botón | Qué hace |
+|---|---|---|
+| Vínculos | **¿Dónde está el vínculo?** | Diagnóstico de vínculos y worksets (abajo) |
+| Vínculos | **Asistente IA** | Chat con Claude que responde consultando el modelo real ([ver](#asistente-ia--chatea-con-tu-modelo)) |
+| Vistas | **Alzados por habitación** | Un alzado interior por muro, recortado al piso y al cielo raso ([ver](#alzados-por-habitación)) |
 
 La primera responde una pregunta muy concreta:
 
@@ -161,6 +162,60 @@ que puede cambiar es la selección en pantalla, si se lo pides).
 > API de Anthropic para generar la respuesta. No uses el asistente en modelos
 > cuya información no puedas compartir con ese servicio.
 
+## Alzados por habitación
+
+El botón **MJ Tools ▸ Vistas ▸ Alzados por habitación** genera, para cada
+habitación, **un alzado interior por cada orientación de muro** — las cuatro
+elevaciones clásicas de una estancia rectangular, y las que hagan falta en
+plantas irregulares.
+
+Cada vista queda acotada exactamente a la estancia:
+
+- **Abajo**, el piso de la habitación.
+- **Arriba**, el **cielo raso o la losa más cercana por encima**. La herramienta
+  busca ambos y se queda con el más bajo que esté sobre el piso; si no encuentra
+  ninguno usa la altura por defecto que indiques.
+- **A los lados**, el ancho de la habitación (más el margen que elijas).
+- **En profundidad**, el corte lejano se sitúa justo detrás del muro más lejano,
+  para que el alzado no muestre las estancias contiguas.
+
+### Cómo funciona
+
+Para cada habitación se leen sus bordes (`GetBoundarySegments`), se agrupan los
+tramos por orientación —los muros paralelos comparten alzado— y se ignoran los
+tramos más cortos que la longitud mínima que indiques, para no generar
+elevaciones espurias en jambas y quiebres.
+
+Después se coloca un marcador de alzado en el centro de la estancia y se giran
+sus vistas hacia cada muro. Un marcador tiene cuatro huecos, así que una
+habitación ortogonal usa **un solo marcador** en planta; solo las plantas con
+muros no perpendiculares necesitan marcadores adicionales.
+
+### Opciones del diálogo
+
+| Opción | Para qué sirve |
+|---|---|
+| Habitaciones | Las de la vista activa, todas las del modelo, o solo las seleccionadas |
+| Tipo de vista de alzado | El `ViewFamilyType` de alzado que se usará |
+| Plantilla de vista | Opcional; se aplica a cada vista creada |
+| Escala | Escala de las vistas nuevas |
+| Margen horizontal | Aire a izquierda y derecha del recorte |
+| Margen vertical | Aire por debajo del piso y por encima del techo (0 para recortar justo) |
+| Profundidad tras el muro | Cuánto se prolonga el corte lejano tras la cara del muro |
+| Longitud mínima de muro | Los tramos de borde más cortos no generan alzado |
+| Altura si no hay techo ni losa | Altura de reserva cuando no se encuentra nada por encima |
+| Recortar con cielos rasos / con losas | Qué elementos se consideran como techo |
+| Omitir habitaciones que ya tienen alzados | Permite volver a ejecutar la herramienta sin duplicar vistas |
+| Nombre de la vista | Patrón con `{numero}`, `{nombre}` y `{direccion}` |
+
+Las vistas se llaman por defecto `101 Sala de reuniones - Muro Norte`, donde la
+dirección es el punto cardinal del muro que se está mirando. El diálogo muestra
+al terminar qué vistas se crearon en cada habitación, con qué altura se recortó
+y de dónde salió esa altura (cielo raso, losa o valor por defecto).
+
+> Nota: si la plantilla de vista que elijas controla la escala o el recorte,
+> Revit ignorará esos ajustes; la herramienta lo indica en el informe.
+
 ## Estructura del código
 
 ```
@@ -170,12 +225,15 @@ src/LinkWorksetInspector/
   RibbonIconFactory.cs                     Iconos de los botones dibujados en memoria
   Commands/InspectLinkWorksetsCommand.cs   Comando del diagnóstico de vínculos
   Commands/AiAssistantCommand.cs           Comando del asistente IA
+  Commands/CreateRoomElevationsCommand.cs  Comando de alzados por habitación
   Services/LinkWorksetAnalyzer.cs          Lógica de análisis y diagnóstico de vínculos
   Services/Ai/ClaudeChatService.cs         Bucle de chat + tool use (SDK de Anthropic)
   Services/Ai/RevitModelTools.cs           Herramientas que la IA ejecuta sobre el modelo
   Services/Ai/AiSettings.cs                API key y modelo (archivo o variable de entorno)
+  Services/RoomElevations/                 Generador de alzados y sus opciones
   Models/LinkReportRow.cs                  Fila del informe de vínculos
   UI/LinkWorksetForm.cs                    Ventana de la tabla de vínculos
   UI/AiChatForm.cs                         Ventana de chat del asistente
   UI/ApiKeyForm.cs                         Diálogo de configuración de la API key
+  UI/RoomElevationsForm.cs                 Diálogo de alzados por habitación
 ```
