@@ -80,11 +80,18 @@ namespace LinkWorksetInspector.Services.RoomElevations
                         {
                             ProcessRoom(room, result);
                             if (result.CreatedViews.Count > 0) tx.Commit();
-                            else tx.RollBack();
+                            else SafeRollBack(tx);
                         }
                         catch (Exception ex)
                         {
-                            tx.RollBack();
+                            // Si la excepción vino del propio Commit, la transacción ya
+                            // terminó y deshacerla otra vez tumbaría todo el lote.
+                            SafeRollBack(tx);
+
+                            // Lo deshecho no existe: ni se informa ni reserva su nombre.
+                            foreach (string reverted in result.CreatedViews) _usedNames.Remove(reverted);
+                            result.CreatedViews.Clear();
+
                             result.Failed = true;
                             result.Notes.Add("Error: " + ex.Message);
                         }
@@ -98,6 +105,15 @@ namespace LinkWorksetInspector.Services.RoomElevations
             return results;
         }
 
+        private static void SafeRollBack(Transaction tx)
+        {
+            try
+            {
+                if (tx.HasStarted() && !tx.HasEnded()) tx.RollBack();
+            }
+            catch { }
+        }
+
         // ================================================================== una habitación
 
         private void ProcessRoom(Room room, RoomElevationResult result)
@@ -106,17 +122,6 @@ namespace LinkWorksetInspector.Services.RoomElevations
             {
                 result.Skipped = true;
                 result.Notes.Add("La habitación no está colocada o no está cerrada (área 0).");
-                return;
-            }
-
-            // Con habitaciones sin número ni nombre el prefijo queda demasiado corto
-            // para identificar nada, así que en ese caso no se omite.
-            string prefix = BuildName(room, null);
-            if (_opt.SkipRoomsWithElevations && prefix.Length >= 4 &&
-                _usedNames.Any(n => n.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
-            {
-                result.Skipped = true;
-                result.Notes.Add("Ya existen vistas cuyo nombre empieza por «" + prefix + "»; se omite.");
                 return;
             }
 
@@ -177,6 +182,15 @@ namespace LinkWorksetInspector.Services.RoomElevations
                 return;
             }
 
+            // Se comprueba contra los nombres que tendrían estos alzados, no contra un
+            // prefijo, para que funcione con cualquier patrón de nombre.
+            if (_opt.SkipRoomsWithElevations && looks.Any(l => _usedNames.Contains(BuildName(room, l))))
+            {
+                result.Skipped = true;
+                result.Notes.Add("Ya existen alzados con estos nombres; se omite.");
+                return;
+            }
+
             // --- techo: cielo raso o losa más cercana por encima ---
             string topSource;
             double topZ = FindTopZ(center, floorZ, out topSource);
@@ -194,7 +208,7 @@ namespace LinkWorksetInspector.Services.RoomElevations
             }
 
             double margin = Mm(_opt.VerticalMarginMm);
-            CreateViewsForRoom(room, looks, planViewId, center,
+            CreateViewsForRoom(room, looks, planViewId, center, floorZ,
                 floorZ - margin, topZ + margin, boundaryPoints, result);
         }
 
@@ -324,6 +338,12 @@ namespace LinkWorksetInspector.Services.RoomElevations
                          .OfClass(typeof(ViewPlan)).Cast<ViewPlan>())
             {
                 if (plan.IsTemplate) continue;
+
+                // Un plano de áreas no sirve de anfitrión: CreateElevation lanzaría.
+                if (plan.ViewType != ViewType.FloorPlan &&
+                    plan.ViewType != ViewType.CeilingPlan &&
+                    plan.ViewType != ViewType.EngineeringPlan) continue;
+
                 Level genLevel;
                 try { genLevel = plan.GenLevel; } catch { continue; }
                 if (genLevel == null || genLevel.Id != levelId) continue;
@@ -335,7 +355,7 @@ namespace LinkWorksetInspector.Services.RoomElevations
         }
 
         private void CreateViewsForRoom(Room room, List<XYZ> looks, ElementId planViewId, XYZ center,
-            double bottomZ, double topZ, List<XYZ> boundaryPoints, RoomElevationResult result)
+            double floorZ, double bottomZ, double topZ, List<XYZ> boundaryPoints, RoomElevationResult result)
         {
             var pending = new List<XYZ>(looks);
             double tolerance = _opt.DirectionToleranceDeg * Math.PI / 180.0;
@@ -345,12 +365,23 @@ namespace LinkWorksetInspector.Services.RoomElevations
             {
                 XYZ first = pending[0];
                 XYZ offset = MarkerOffset(first, markerIndex);
-                var origin = new XYZ(center.X + offset.X, center.Y + offset.Y, bottomZ);
+
+                // El marcador va a la cota del piso: bottomZ lleva restado el margen de
+                // recorte y dejaría el símbolo fuera del rango de la vista de planta.
+                var origin = new XYZ(center.X + offset.X, center.Y + offset.Y, floorZ);
 
                 ElevationMarker marker = ElevationMarker.CreateElevationMarker(
                     _doc, _opt.ViewFamilyTypeId, origin, _opt.Scale);
 
-                ViewSection firstView = marker.CreateElevation(_doc, planViewId, 0);
+                ViewSection firstView;
+                try { firstView = marker.CreateElevation(_doc, planViewId, 0); }
+                catch (Exception ex)
+                {
+                    result.Failed = true;
+                    result.Notes.Add("Revit no pudo crear el alzado en la vista de planta elegida: " +
+                                     ex.Message);
+                    return;
+                }
                 _doc.Regenerate();
 
                 RotateMarkerToLook(marker, firstView, origin, first);
@@ -412,11 +443,18 @@ namespace LinkWorksetInspector.Services.RoomElevations
             string name = UniqueName(BuildName(room, look));
             try { view.Name = name; }
             catch (Exception ex) { result.Notes.Add("No se pudo renombrar una vista: " + ex.Message); }
+
+            // Revit puede haber rechazado el nombre: se informa el que la vista tiene.
+            try { name = view.Name; } catch { }
             _usedNames.Add(name);
 
             if (_opt.ViewTemplateId != ElementId.InvalidElementId)
             {
-                try { view.ViewTemplateId = _opt.ViewTemplateId; }
+                try
+                {
+                    view.ViewTemplateId = _opt.ViewTemplateId;
+                    _doc.Regenerate();
+                }
                 catch (Exception ex) { result.Notes.Add("No se pudo aplicar la plantilla: " + ex.Message); }
             }
 
@@ -437,9 +475,10 @@ namespace LinkWorksetInspector.Services.RoomElevations
         private void ApplyCrop(ViewSection view, List<XYZ> boundaryPoints,
             double bottomZ, double topZ, RoomElevationResult result)
         {
+            BoundingBoxXYZ crop;
             try
             {
-                BoundingBoxXYZ crop = view.CropBox;
+                crop = view.CropBox;
                 Transform toLocal = crop.Transform.Inverse;
 
                 double minX = double.MaxValue, maxX = double.MinValue;
@@ -460,15 +499,22 @@ namespace LinkWorksetInspector.Services.RoomElevations
                 double margin = Mm(_opt.HorizontalMarginMm);
                 crop.Min = new XYZ(minX - margin, minY, crop.Min.Z);
                 crop.Max = new XYZ(maxX + margin, maxY, crop.Max.Z);
-
-                view.CropBoxActive = true;
-                view.CropBox = crop;
-                try { view.CropBoxVisible = false; } catch { }
             }
             catch (Exception ex)
             {
-                result.Notes.Add("No se pudo ajustar el recorte: " + ex.Message);
+                result.Notes.Add("No se pudo calcular el recorte: " + ex.Message);
+                return;
             }
+
+            // Cada ajuste va por separado: si la plantilla de vista controla el
+            // interruptor de recorte, las dimensiones sí se pueden seguir aplicando.
+            try { view.CropBoxActive = true; }
+            catch { result.Notes.Add("El recorte lo activa la plantilla de vista."); }
+
+            try { view.CropBox = crop; }
+            catch (Exception ex) { result.Notes.Add("No se pudo dimensionar el recorte: " + ex.Message); }
+
+            try { view.CropBoxVisible = false; } catch { }
         }
 
         /// <summary>
@@ -493,10 +539,17 @@ namespace LinkWorksetInspector.Services.RoomElevations
 
                 // 0 = sin recorte; cualquier otro valor activa el corte lejano.
                 Parameter mode = view.get_Parameter(BuiltInParameter.VIEWER_BOUND_FAR_CLIPPING);
-                if (mode != null && !mode.IsReadOnly) mode.Set(1);
-
                 Parameter offset = view.get_Parameter(BuiltInParameter.VIEWER_BOUND_OFFSET_FAR);
-                if (offset != null && !offset.IsReadOnly) offset.Set(depth);
+
+                if (mode == null || mode.IsReadOnly || offset == null || offset.IsReadOnly)
+                {
+                    result.Notes.Add("El corte lejano lo controla la plantilla de vista; sin ajustar, " +
+                                     "el alzado puede mostrar las estancias contiguas.");
+                    return;
+                }
+
+                mode.Set(1);
+                offset.Set(depth);
             }
             catch (Exception ex)
             {
@@ -506,12 +559,12 @@ namespace LinkWorksetInspector.Services.RoomElevations
 
         // ================================================================== nombres
 
-        /// <summary>Nombre de la vista; con look == null devuelve solo el prefijo de la habitación.</summary>
+        /// <summary>Nombre que tendrá el alzado de esta habitación hacia esta dirección.</summary>
         private string BuildName(Room room, XYZ look)
         {
             string number = GetParam(room, BuiltInParameter.ROOM_NUMBER);
             string name = GetParam(room, BuiltInParameter.ROOM_NAME);
-            string direction = look != null ? "Muro " + CompassName(look) : "";
+            string direction = "Muro " + CompassName(look);
 
             string result = (_opt.NamePattern ?? "{numero} {nombre} - {direccion}")
                 .Replace("{numero}", number)

@@ -148,12 +148,21 @@ namespace LinkWorksetInspector.UI
                 }
             };
 
+            if (_viewType.Items.Count == 0) _createButton.Enabled = false;
+        }
+
+        /// <summary>
+        /// El aviso se escribe aquí y no en el constructor: dar formato al RichTextBox
+        /// antes de que exista el handle del formulario obliga a recrearlo y puede
+        /// perder el color.
+        /// </summary>
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+
             if (_viewType.Items.Count == 0)
-            {
-                _createButton.Enabled = false;
                 AppendLine("El proyecto no tiene ningún tipo de vista de alzado. Créalo primero en " +
                            "Vista ▸ Alzado, o carga una plantilla de proyecto que lo incluya.", Color.Firebrick);
-            }
         }
 
         // ---------------------------------------------------------------- opciones
