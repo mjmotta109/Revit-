@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>MJ Align Tools</Name>
+    <Assembly>MJAlignTools\MJAlignTools.dll</Assembly>
+    <AddInId>983f5717-d00d-4a38-ad95-35895cc37237</AddInId>
+    <FullClassName>MJAlignTools.App</FullClassName>
+    <VendorId>MJMT</VendorId>
+    <VendorDescription>MJ Motta — Panel de alineación estilo Illustrator</VendorDescription>
+  </AddIn>
+</RevitAddIns>

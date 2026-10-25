@@ -4,6 +4,10 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LinkWorksetInspector", "src\LinkWorksetInspector\LinkWorksetInspector.csproj", "{B4EC108C-14B2-471C-8ED8-3F2158307032}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MJAlignTools", "src\MJAlignTools\MJAlignTools.csproj", "{2893FC1B-E922-420F-AA3C-F3711A873EF9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MJAlignTools.Tests", "tests\MJAlignTools.Tests\MJAlignTools.Tests.csproj", "{11187225-53EF-47A6-9A79-EE987FF7D742}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,6 +18,14 @@ Global
 		{B4EC108C-14B2-471C-8ED8-3F2158307032}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B4EC108C-14B2-471C-8ED8-3F2158307032}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B4EC108C-14B2-471C-8ED8-3F2158307032}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2893FC1B-E922-420F-AA3C-F3711A873EF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2893FC1B-E922-420F-AA3C-F3711A873EF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2893FC1B-E922-420F-AA3C-F3711A873EF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2893FC1B-E922-420F-AA3C-F3711A873EF9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11187225-53EF-47A6-9A79-EE987FF7D742}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11187225-53EF-47A6-9A79-EE987FF7D742}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11187225-53EF-47A6-9A79-EE987FF7D742}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11187225-53EF-47A6-9A79-EE987FF7D742}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

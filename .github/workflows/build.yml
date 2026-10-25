@@ -8,6 +8,23 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    name: Pruebas (cálculo de alineación)
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Instalar .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # Solo prueban el núcleo de MJAlignTools (src/MJAlignTools/Core), que no depende de Revit.
+      - name: Ejecutar pruebas
+        run: dotnet test tests/MJAlignTools.Tests/MJAlignTools.Tests.csproj
+
   build:
     name: Revit ${{ matrix.revit }}
     runs-on: ubuntu-latest
@@ -32,20 +49,25 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ matrix.revit }}-${{ hashFiles('**/*.csproj') }}
           restore-keys: ${{ runner.os }}-nuget-${{ matrix.revit }}-
 
-      - name: Compilar para Revit ${{ matrix.revit }}
-        run: dotnet build -c Release -p:RevitVersion=${{ matrix.revit }} src/LinkWorksetInspector/LinkWorksetInspector.csproj
+      - name: Compilar Link Workset Inspector
+        run: dotnet build -c Release -p:RevitVersion=${{ matrix.revit }} -p:SkipAddinDeploy=true src/LinkWorksetInspector/LinkWorksetInspector.csproj
+
+      - name: Compilar Alinear objetos
+        run: dotnet build -c Release -p:RevitVersion=${{ matrix.revit }} -p:SkipAddinDeploy=true src/MJAlignTools/MJAlignTools.csproj
 
       # El zip resultante se descomprime tal cual dentro de
       # %AppData%\Autodesk\Revit\Addins\<versión>\
       - name: Preparar paquete de instalación
         run: |
-          mkdir -p staging/LinkWorksetInspector
+          mkdir -p staging/LinkWorksetInspector staging/MJAlignTools
           cp manifest/LinkWorksetInspector.addin staging/
+          cp manifest/MJAlignTools.addin staging/
           cp src/LinkWorksetInspector/bin/Release/LinkWorksetInspector.dll staging/LinkWorksetInspector/
+          cp src/MJAlignTools/bin/Release/MJAlignTools.dll staging/MJAlignTools/
 
       - name: Publicar artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: LinkWorksetInspector-Revit${{ matrix.revit }}
+          name: MJTools-Revit${{ matrix.revit }}
           path: staging/
           if-no-files-found: error
